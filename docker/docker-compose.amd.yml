@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ../weights/DotsOCR:/workspace/weights/DotsOCR:ro
+      - ../weights/DotsOCR:/workspace/weights/DotsOCR
     environment:
       - PYTHONPATH=/workspace/weights:$$PYTHONPATH
       - HIP_VISIBLE_DEVICES=0

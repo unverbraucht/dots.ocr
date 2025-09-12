@@ -37,8 +37,9 @@ set -e
 
 echo "Initializing DotsOCR for AMD GPU..."
 
-# Create proper __init__.py
-cat > /workspace/weights/DotsOCR/__init__.py << 'PYEOF'
+# Create proper __init__.py if it doesn't exist
+if [ ! -f "/workspace/weights/DotsOCR/__init__.py" ]; then
+    cat > /workspace/weights/DotsOCR/__init__.py << 'PYEOF'
 # DotsOCR Package
 from . import modeling_dots_ocr
 from . import modeling_dots_vision
@@ -51,8 +52,10 @@ try:
 except ImportError:
     __all__ = ['modeling_dots_ocr', 'modeling_dots_vision', 'configuration_dots']
 PYEOF
-
-echo "DotsOCR __init__.py created successfully"
+    echo "DotsOCR __init__.py created successfully"
+else
+    echo "DotsOCR __init__.py already exists, skipping creation"
+fi
 
 # Verify ROCm installation
 python3 -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'ROCm available: {torch.cuda.is_available()}'); print(f'ROCm version: {torch.version.hip if hasattr(torch.version, "hip") else "N/A"}')"
