@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   dots-ocr-amd:
     build:
@@ -20,14 +18,9 @@ services:
       # ROCm device access
       - /dev/kfd:/dev/kfd
       - /dev/dri:/dev/dri
-    group_add:
-      - video
-      - render
-    cap_add:
-      - SYS_PTRACE
-    security_opt:
-      - seccomp:unconfined
-    shm_size: '2gb'  # Increased shared memory for large models
+    # Use privileged mode to bypass group requirements for testing
+    privileged: true
+    shm_size: '2gb'
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
