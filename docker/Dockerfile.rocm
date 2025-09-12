@@ -58,7 +58,16 @@ else
 fi
 
 # Verify ROCm installation
-python3 -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'ROCm available: {torch.cuda.is_available()}'); print(f'ROCm version: {torch.version.hip if hasattr(torch.version, "hip") else "N/A"}')"
+python3 -c "
+import torch
+print(f'PyTorch version: {torch.__version__}')
+print(f'ROCm available: {torch.cuda.is_available()}')
+try:
+    rocm_ver = torch.version.hip
+except:
+    rocm_ver = 'N/A'
+print(f'ROCm version: {rocm_ver}')
+"
 
 if [ -f "/workspace/weights/DotsOCR/config.json" ]; then
     echo "Model configuration found"
