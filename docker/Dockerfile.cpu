@@ -1,0 +1,66 @@
+# CPU-Only Dockerfile for DotsOCR
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# Install CPU-only PyTorch
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+RUN pip install transformers==4.51.3 Pillow flask requests
+
+# Copy startup script
+COPY <<EOF /workspace/start_cpu_server.py
+import torch
+from transformers import AutoModel, AutoProcessor
+from flask import Flask, request, jsonify
+import base64
+from PIL import Image
+import io
+import sys
+sys.path.append('/workspace/weights')
+
+app = Flask(__name__)
+
+print("Loading DotsOCR model on CPU...")
+model_path = "/workspace/weights/DotsOCR"
+try:
+    model = AutoModel.from_pretrained(model_path, trust_remote_code=True)
+    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+    print("Model loaded successfully on CPU")
+except Exception as e:
+    print(f"Model loading failed: {e}")
+    model, processor = None, None
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok", "device": "cpu", "model_loaded": model is not None})
+
+@app.route('/parse', methods=['POST'])
+def parse_document():
+    if model is None:
+        return jsonify({"error": "Model not loaded"}), 500
+    
+    try:
+        data = request.get_json()
+        image_data = base64.b64decode(data['image'])
+        image = Image.open(io.BytesIO(image_data))
+        
+        inputs = processor(image, return_tensors="pt")
+        with torch.no_grad():
+            outputs = model.generate(**inputs, max_new_tokens=1024)
+        
+        result = processor.decode(outputs[0], skip_special_tokens=True)
+        return jsonify({"result": result})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000)
+EOF
+
+EXPOSE 8000
+CMD ["python", "/workspace/start_cpu_server.py"]

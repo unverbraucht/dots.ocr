@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  dots-ocr-amd:
+    build:
+      context: .
+      dockerfile: Dockerfile.rocm
+    container_name: dots-ocr-amd-container
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../weights/DotsOCR:/workspace/weights/DotsOCR:ro
+    environment:
+      - PYTHONPATH=/workspace/weights:$$PYTHONPATH
+      - HIP_VISIBLE_DEVICES=0
+      - ROCM_PATH=/opt/rocm
+      - HSA_OVERRIDE_GFX_VERSION=10.3.0
+      - PYTORCH_ROCM_ARCH=gfx900;gfx906;gfx908;gfx90a;gfx1030;gfx1100;gfx1101;gfx1102
+    devices:
+      # ROCm device access
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    shm_size: '2gb'  # Increased shared memory for large models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

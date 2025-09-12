@@ -80,7 +80,7 @@ def get_image_input():
     """Get image input"""
     st.markdown("#### Image Input")
     
-    input_mode = st.pills(label="Select input method", options=["Upload Image", "Enter Image URL/Path", "Select Test Image"], key="input_mode", label_visibility="collapsed")
+    input_mode = st.radio(label="Select input method", options=["Upload Image", "Enter Image URL/Path", "Select Test Image"], key="input_mode", label_visibility="collapsed", index=0)
 
     if input_mode == "Upload Image":
         # File uploader
